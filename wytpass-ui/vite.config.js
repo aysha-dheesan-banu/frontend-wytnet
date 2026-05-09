@@ -19,8 +19,8 @@ const getAppInputs = () => {
   dirs.forEach(dir => {
     const dashPath = resolve(__dirname, dir.name, 'dashboard.html');
     if (fs.existsSync(dashPath)) {
-      // Create a key like 'habit-tracking' for 'habit-tracking/dashboard.html'
-      inputs[dir.name] = dashPath;
+      // Preserve the folder structure: 'habit-tracking/dashboard'
+      inputs[`${dir.name}/dashboard`] = dashPath;
     }
   });
 
