@@ -153,6 +153,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('Userinfo from backend:', user);
                 if (userEmailElem) userEmailElem.textContent = user.email;
                 if (userAvatarElem) userAvatarElem.textContent = user.email.charAt(0).toUpperCase();
+            } else if (res.status === 401) {
+                console.warn('Session expired (401). Redirecting to login...');
+                localStorage.removeItem('access_token');
+                window.location.reload(); // This will trigger showLoginForm()
+                return;
             } else {
                 console.warn('Userinfo fetch failed:', res.status);
             }
