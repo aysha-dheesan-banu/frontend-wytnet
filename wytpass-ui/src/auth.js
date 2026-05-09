@@ -173,19 +173,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Trust button
         if (trustBtn) {
             trustBtn.addEventListener('click', () => {
-                console.log('Trusting app, redirecting to backend');
-                const authUrl = new URL(`${PROJECT1_URL}/oauth/authorize`);
-                // Forward all original query parameters
-                const params = new URLSearchParams(window.location.search);
-                params.forEach((value, key) => {
-                    authUrl.searchParams.set(key, value);
-                });
+                if (!PROJECT1_URL || PROJECT1_URL.includes('localhost')) {
+                    console.warn('Warning: PROJECT1_URL is set to localhost in production!');
+                }
                 
-                // CRITICAL: Add the token and confirmation flag
-                authUrl.searchParams.set('confirm', 'true');
-                authUrl.searchParams.set('token', token);
+                console.log('Trusting app, redirecting to:', PROJECT1_URL);
                 
-                window.location.href = authUrl.toString();
+                try {
+                    const authUrl = new URL(`${PROJECT1_URL}/oauth/authorize`);
+                    // Forward all original query parameters
+                    const params = new URLSearchParams(window.location.search);
+                    params.forEach((value, key) => {
+                        authUrl.searchParams.set(key, value);
+                    });
+                    
+                    // CRITICAL: Add the token and confirmation flag
+                    authUrl.searchParams.set('confirm', 'true');
+                    authUrl.searchParams.set('token', token);
+                    
+                    window.location.href = authUrl.toString();
+                } catch (e) {
+                    alert('Redirect Error: ' + e.message);
+                    console.error('Redirect Error:', e);
+                }
             });
         }
 
