@@ -52,8 +52,8 @@
         </div>
     </div>
 
-    <script>
-        const PROJECT1_URL = 'http://localhost:8000';
+    <script type="module">
+        const PROJECT1_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
         const CLIENT_ID = 'YOUR_REGULATION_CLIENT_ID'; 
         const REDIRECT_URI = window.location.origin + window.location.pathname; 
 
