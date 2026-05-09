@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Project A</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">Project A</div>
+            <h1>Welcome back</h1>
+            <p>Please sign in to continue to your dashboard.</p>
+            
+            <button id="sso-login-btn" class="sso-button">
+                <span class="btn-text">Sign in with Whitepass</span>
+                <div class="spinner hidden"></div>
+            </button>
+
+            <div id="status" class="status hidden">
+                Waiting for authentication...
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

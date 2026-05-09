@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authorize | Whitepass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body>
+  <div id="app">
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-header">
+          <img src="/logo.png" alt="Whitepass Logo" class="logo">
+          <h1>Trust this App?</h1>
+          <p>An application is requesting access to your account.</p>
+        </div>
+
+        <div class="user-info-box" style="background: var(--input-bg); padding: 20px; border-radius: 16px; margin-bottom: 32px; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div id="user-avatar" style="width: 48px; height: 48px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: white;">
+                    U
+                </div>
+                <div>
+                    <div id="user-email" style="font-weight: 600; font-size: 16px;">loading...</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">Logged in as</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-request" style="margin-bottom: 32px; text-align: center;">
+            <p><strong>Project A</strong> wants to verify your identity.</p>
+        </div>
+
+        <button id="trust-btn" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 10px;">
+          <span class="btn-text">Trust this App</span>
+          <div class="spinner hidden"></div>
+        </button>
+        
+        <button id="cancel-btn" style="width: 100%; margin-top: 12px; padding: 14px; background: transparent; border: 1px solid var(--border); border-radius: 12px; color: var(--text-muted); font-size: 15px; font-weight: 500; cursor: pointer; transition: var(--transition);">
+            Cancel
+        </button>
+
+        <div class="login-footer">
+          <p>Securely authenticated by <span style="color: var(--primary); font-weight: 600;">Whitepass</span></p>
+        </div>
+      </div>
+
+      <div class="login-decoration">
+        <div class="glow-sphere"></div>
+        <div class="glass-overlay"></div>
+      </div>
+    </div>
+
+    <div id="toast-container"></div>
+  </div>
+  <script type="module" src="/src/auth.js"></script>
+</body>
+
+</html>

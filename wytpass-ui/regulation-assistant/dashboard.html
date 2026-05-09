@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regulation Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .hidden { display: none !important; }
+        #auth-status { margin-top: 20px; font-size: 14px; color: var(--text-muted); text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 600px;">
+        <!-- Login View -->
+        <div id="login-view" class="card hidden">
+            <div class="logo">Regulation Assistant</div>
+            <h1>Welcome back</h1>
+            <p>Secure access to your compliance tools.</p>
+            
+            <button id="sso-login-btn" class="sso-button">
+                <span class="btn-text">Sign in with WytPass</span>
+            </button>
+
+            <div id="auth-status" class="hidden">Connecting...</div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="card dashboard-card hidden" style="text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div class="logo" style="margin-bottom: 0;">Regulation Assistant</div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div id="user-avatar" class="avatar" style="width: 32px; height: 32px; font-size: 14px;">U</div>
+                    <button id="logout-btn" class="logout-btn" style="padding: 6px 12px; font-size: 13px;">Logout</button>
+                </div>
+            </div>
+            
+            <h1 style="font-size: 20px;">Compliance Reports</h1>
+            <p style="margin-bottom: 24px;">Regulatory oversight and assistant tools.</p>
+
+            <div style="padding: 24px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; color: var(--text-muted);">
+                <p style="margin-bottom: 12px;">No active reports found.</p>
+                <button class="logout-btn" style="background: var(--primary); color: white; border: none;">Generate New Report</button>
+            </div>
+
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted);">
+                Logged in as <strong id="display-email">...</strong> via WytPass SSO
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PROJECT1_URL = 'http://localhost:8000';
+        const CLIENT_ID = 'YOUR_REGULATION_CLIENT_ID'; 
+        const REDIRECT_URI = window.location.origin + window.location.pathname; 
+
+        const loginView = document.getElementById('login-view');
+        const dashboardView = document.getElementById('dashboard-view');
+        const authStatus = document.getElementById('auth-status');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const token = localStorage.getItem('access_token');
+            const user = JSON.parse(localStorage.getItem('user'));
+
+            if (code) {
+                loginView.classList.remove('hidden');
+                authStatus.classList.remove('hidden');
+                authStatus.textContent = 'Completing login...';
+
+                fetch(`${PROJECT1_URL}/oauth/token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        code: code,
+                        client_id: CLIENT_ID,
+                        client_secret: 'YOUR_REGULATION_CLIENT_SECRET', 
+                        redirect_uri: REDIRECT_URI,
+                    }),
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.access_token) {
+                        localStorage.setItem('access_token', data.access_token);
+                        fetch(`${PROJECT1_URL}/oauth/userinfo`, {
+                            headers: { 'Authorization': `Bearer ${data.access_token}` }
+                        })
+                        .then(res => res.json())
+                        .then(userData => {
+                            localStorage.setItem('user', JSON.stringify(userData));
+                            window.location.href = REDIRECT_URI;
+                        });
+                    } else {
+                        authStatus.textContent = 'Login failed.';
+                    }
+                })
+                .catch(() => {
+                    authStatus.textContent = 'Connection error.';
+                });
+                return;
+            }
+
+            if (!user || !token) {
+                loginView.classList.remove('hidden');
+            } else {
+                showDashboard(user);
+            }
+
+            document.getElementById('sso-login-btn').addEventListener('click', () => {
+                const authUrl = new URL(`${PROJECT1_URL}/oauth/authorize`);
+                authUrl.searchParams.set('client_id', CLIENT_ID);
+                authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+                authUrl.searchParams.set('response_type', 'code');
+                authUrl.searchParams.set('scope', 'openid profile email');
+                window.location.href = authUrl.toString();
+            });
+
+            function showDashboard(user) {
+                loginView.classList.add('hidden');
+                dashboardView.classList.remove('hidden');
+                document.getElementById('display-email').textContent = user.email;
+                document.getElementById('user-avatar').textContent = (user.name || user.email).charAt(0).toUpperCase();
+            }
+
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.clear();
+                window.location.reload();
+            });
+        });
+    </script>
+</body>
+</html>
