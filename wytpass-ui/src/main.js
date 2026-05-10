@@ -94,20 +94,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('access_token', data.access_token);
                         localStorage.setItem('refresh_token', data.refresh_token);
 
-                        setTimeout(() => {
-                            const payload = parseJwt(data.access_token);
-                            const roles = payload?.roles || [];
-                            const isAdmin = roles.includes('admin') || roles.includes('super_admin') || email === 'admin@example.com';
+                        const payload = parseJwt(data.access_token);
+                        const roles = payload?.roles || [];
+                        const isAdmin = roles.includes('admin') || roles.includes('super_admin') || email === 'admin@example.com';
 
-                            if (isAdmin) {
-                                console.log('Admin detected, redirecting to premium dashboard with token');
-                                window.location.href = `${PREMIUM_DASHBOARD}/login?token=${data.access_token}`;
-                            } else {
-                                const redirect = urlParams.get('redirect');
-                                if (redirect) window.location.href = `/${redirect}`;
-                                else window.location.href = '/dashboard.html';
-                            }
-                        }, 1000);
+                        if (isAdmin) {
+                            console.log('Admin detected, redirecting to premium dashboard with token');
+                            window.location.href = `${PREMIUM_DASHBOARD}/login?token=${data.access_token}`;
+                        } else {
+                            const redirect = urlParams.get('redirect');
+                            if (redirect) window.location.href = `/${redirect}`;
+                            else window.location.href = '/dashboard.html';
+                        }
                     } else {
                         console.error('Login failed:', data);
                         showToast(data.detail || 'Login failed', 'error');

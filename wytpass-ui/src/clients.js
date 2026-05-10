@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const isProd = window.location.hostname === 'wytnet.com';
+const API_BASE = isProd ? 'https://api.wytnet.com' : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
 
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('access_token');
