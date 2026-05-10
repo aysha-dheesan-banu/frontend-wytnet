@@ -25,10 +25,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Show user email from JWT
     const payload = parseJwt(token);
+    const email = payload?.email || payload?.sub || '';
+    
+    // Robust role detection
+    const rawRoles = payload?.role ? [payload.role] : (payload?.roles || []);
+    const roles = rawRoles.map(r => String(r).toLowerCase());
+    
+    const isAdmin = roles.includes('admin') || 
+                    roles.includes('super_admin') || 
+                    payload?.is_superuser === true ||
+                    email === 'admin@example.com'; // Direct fallback for the admin user
+
+    console.log('Dashboard Auth Debug:', { email, roles, isAdmin, payload });
+
     document.getElementById('loading-state').classList.add('hidden');
     document.getElementById('user-details').classList.remove('hidden');
-    document.getElementById('user-email').textContent =
-        payload?.email || payload?.sub || 'Unknown User';
+    document.getElementById('user-email').textContent = email || 'Unknown User';
+
+    // Handle Admin UI
+    if (isAdmin) {
+        console.log('Admin detected, unlocking tools...');
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.classList.remove('hidden');
+            el.style.display = 'block'; // Force display
+        });
+        const badge = document.getElementById('user-role-badge');
+        if (badge) {
+            badge.textContent = payload?.is_superuser ? 'SUPER ADMIN' : 'ADMIN';
+            badge.classList.remove('hidden');
+        }
+        loadAdminOverview(token);
+    }
 
     // Fetch connected apps from Project 1
     try {
@@ -53,6 +80,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.removeItem('refresh_token');
         window.location.href = '/';
     });
+
+    async function loadAdminOverview(token) {
+        try {
+            const res = await fetch(`${PROJECT1_URL}/v1/metrics/overview`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const stats = await res.json();
+                renderAdminStats(stats);
+            }
+        } catch (e) {
+            console.error('Failed to load admin stats', e);
+        }
+    }
+
+    function renderAdminStats(stats) {
+        const container = document.getElementById('admin-overview-section');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div style="margin-bottom: 24px;">
+                <div class="label" style="margin-bottom:16px;">Platform Quick Stats</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+                    <div class="stat-card">
+                        <div class="label" style="font-size: 11px;">Total Users</div>
+                        <div style="font-size: 28px; font-weight: 700; color: white; margin-top: 4px;">${stats.total_users || 0}</div>
+                        <div style="font-size: 12px; color: #10b981; margin-top: 4px;">${stats.active_users || 0} Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label" style="font-size: 11px;">Active Clients</div>
+                        <div style="font-size: 28px; font-weight: 700; color: white; margin-top: 4px;">${stats.total_clients || 0}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Connected Apps</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label" style="font-size: 11px;">Live Sessions</div>
+                        <div style="font-size: 28px; font-weight: 700; color: white; margin-top: 4px;">${stats.active_sessions || 0}</div>
+                        <div style="font-size: 12px; color: #38bdf8; margin-top: 4px;">Current Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label" style="font-size: 11px;">24h Logins</div>
+                        <div style="font-size: 28px; font-weight: 700; color: white; margin-top: 4px;">${stats.successful_logins_24h || 0}</div>
+                        <div style="font-size: 12px; color: #f87171; margin-top: 4px;">${stats.failed_logins_24h || 0} Failed</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     async function loadConnectedApps(token) {
         try {

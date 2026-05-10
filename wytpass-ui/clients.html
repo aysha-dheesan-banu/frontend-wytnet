@@ -135,6 +135,24 @@
       .integration-group { margin-bottom: 16px; }
       .integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
       @media (max-width: 600px) { .integration-grid { grid-template-columns: 1fr; } }
+
+      /* Filter Buttons */
+      .filter-btn {
+        background: transparent; border: none; color: var(--text-muted);
+        padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+        transition: all 0.2s;
+      }
+      .filter-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+      .filter-btn.active { background: var(--primary); color: white; }
+
+      .scope-tag {
+        padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: monospace;
+        background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);
+      }
+      .app-icon {
+        width: 32px; height: 32px; border-radius: 8px; background: rgba(139, 92, 246, 0.1);
+        display: flex; align-items: center; justify-content: center; color: var(--primary);
+      }
     </style>
   </head>
   <body>
@@ -174,66 +192,128 @@
         <div class="portal-decoration portal-sphere-1"></div>
         <div class="portal-decoration portal-sphere-2"></div>
         
-        <div class="main-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <div>
-            <h1>Manage Apps</h1>
-            <p>View, register, and configure OAuth clients.</p>
+            <h1 style="font-size: 24px; font-weight: 700; color: white; margin: 0;">OAuth Clients</h1>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Register and manage applications that authenticate through this identity provider.</p>
           </div>
-          <button id="add-client-btn" class="btn" style="padding: 10px 20px; font-size: 14px; width: auto; background: var(--primary); border: none; color: white; border-radius: 8px; cursor: pointer;">
-            + Register App
-          </button>
+          <div style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.2);">Super Admin</div>
         </div>
 
-        <div class="content-card">
-          <div class="table-container">
-            <table>
+        <!-- Search & Filters -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-top: 24px; margin-bottom: 24px;">
+          <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
+            <div style="flex: 1; min-width: 300px; position: relative;">
+              <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <input type="text" id="client-search" placeholder="Search by name, client ID, or description..." style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 12px 42px; color: white; outline: none; font-size: 14px;">
+            </div>
+            <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 10px; border: 1px solid var(--border);">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="active">Active</button>
+              <button class="filter-btn" data-filter="disabled">Disabled</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-card" style="padding: 0; overflow: hidden; border-radius: 16px;">
+          <div class="table-container" style="border: none; border-radius: 0;">
+            <table style="font-size: 13px;">
               <thead>
-                <tr>
-                  <th>App Name</th>
-                  <th>Client ID</th>
-                  <th>Redirect URIs</th>
-                  <th style="text-align: right;">Actions</th>
+                <tr style="background: rgba(255,255,255,0.02);">
+                  <th style="padding: 16px 24px; width: 250px;">Application</th>
+                  <th style="padding: 16px 24px;">Client ID</th>
+                  <th style="padding: 16px 24px;">Scopes</th>
+                  <th style="padding: 16px 24px;">PKCE</th>
+                  <th style="padding: 16px 24px;">Status</th>
+                  <th style="padding: 16px 24px; text-align: right;">Created</th>
                 </tr>
               </thead>
               <tbody id="clients-table-body">
                 <tr>
-                  <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                    <div class="spinner" style="margin: 0 auto 16px auto; width: 30px; height: 30px;"></div>
-                    Loading apps...
+                  <td colspan="6" style="text-align: center; padding: 100px; color: var(--text-muted);">
+                    <div class="spinner" style="margin: 0 auto 16px auto; width: 32px; height: 32px;"></div>
+                    Loading OAuth clients...
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
+
+        <button id="add-client-btn" style="position: fixed; bottom: 32px; right: 32px; background: var(--primary); color: white; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4); display: flex; align-items: center; gap: 10px; z-index: 100;">
+          <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          New Client
+        </button>
       </main>
 
       <!-- Client Modal -->
       <div class="modal-overlay" id="client-modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 id="modal-title">Register App</h2>
+        <div class="modal-content" style="width: min(600px, 95vw);">
+          <div class="modal-header" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px;">
+            <h2 id="modal-title" style="font-size: 18px; font-weight: 600;">Create OAuth Client</h2>
           </div>
           <form id="client-form">
             <input type="hidden" id="client-id">
             
-            <div class="input-group">
-              <label for="app-name-input">App Name</label>
-              <input type="text" id="app-name-input" required>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <div class="input-group">
+                <label for="app-name-input">APPLICATION NAME</label>
+                <input type="text" id="app-name-input" placeholder="My App" required style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%;">
+              </div>
+              
+              <div class="input-group">
+                <label>PKCE</label>
+                <div style="display: flex; align-items: center; gap: 10px; height: 46px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 0 12px;">
+                  <input type="checkbox" id="pkce-input" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary);">
+                  <span style="font-size: 13px; color: var(--text-muted);">Require PKCE (Recommended)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-group" style="margin-top: 20px;">
+              <label for="description-input">DESCRIPTION</label>
+              <textarea id="description-input" rows="2" placeholder="Optional description shown on the consent screen" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; resize: none;"></textarea>
             </div>
             
-            <div class="input-group">
-              <label for="redirect-uris-input">Redirect URIs <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Comma separated)</span></label>
-              <textarea id="redirect-uris-input" rows="3" required style="resize: vertical;"></textarea>
+            <div class="input-group" style="margin-top: 20px;">
+              <label for="redirect-uris-input">REDIRECT URIS</label>
+              <div id="redirect-uris-container">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                  <input type="text" class="redirect-uri-field" placeholder="https://app.example.com/callback" style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px;">
+                </div>
+              </div>
+              <button type="button" id="add-uri-btn" style="background: transparent; border: none; color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 0;">
+                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add another redirect URI
+              </button>
+            </div>
+
+            <div class="input-group" style="margin-top: 24px;">
+              <label>ALLOWED SCOPES</label>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                <label class="scope-chip">
+                  <input type="checkbox" name="scopes" value="openid" checked hidden>
+                  <span>openid</span>
+                </label>
+                <label class="scope-chip">
+                  <input type="checkbox" name="scopes" value="profile" checked hidden>
+                  <span>profile</span>
+                </label>
+                <label class="scope-chip">
+                  <input type="checkbox" name="scopes" value="email" checked hidden>
+                  <span>email</span>
+                </label>
+                <label class="scope-chip">
+                  <input type="checkbox" name="scopes" value="offline_access" hidden>
+                  <span>offline access</span>
+                </label>
+              </div>
             </div>
             
-            <div id="credentials-section" style="display: none; margin-top: 24px; animation: slideDown 0.3s ease-out;">
-              <div style="padding: 20px; background: rgba(139, 92, 246, 0.05); border-radius: 16px; border: 1px solid rgba(139, 92, 246, 0.2);">
-                <h3 style="margin: 0 0 16px 0; font-size: 16px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
-                  <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                  Client Credentials
-                </h3>
-                
+            <!-- Credentials Section (Only for Edit/Created) -->
+            <div id="credentials-section" style="display: none; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
+              <h3 style="font-size: 14px; color: var(--primary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Client Credentials</h3>
+              <div style="display: grid; gap: 16px;">
                 <div class="integration-group">
                   <label class="integration-label">Client ID</label>
                   <div class="code-snippet">
@@ -241,7 +321,6 @@
                     <button type="button" class="copy-btn" data-copy="display-client-id">Copy</button>
                   </div>
                 </div>
-                
                 <div class="integration-group">
                   <label class="integration-label">Client Secret (Hover to reveal)</label>
                   <div class="code-snippet hidden-secret">
@@ -249,43 +328,24 @@
                     <button type="button" class="copy-btn" data-copy="display-client-secret">Copy</button>
                   </div>
                 </div>
-
-                <div class="integration-grid">
-                  <div class="integration-group">
-                    <label class="integration-label">Authorize URL</label>
-                    <div class="code-snippet">
-                      <span class="code-snippet-text" id="display-auth-url">http://localhost:8000/oauth/authorize</span>
-                      <button type="button" class="copy-btn" data-copy="display-auth-url">Copy</button>
-                    </div>
-                  </div>
-                  <div class="integration-group">
-                    <label class="integration-label">Token URL</label>
-                    <div class="code-snippet">
-                      <span class="code-snippet-text" id="display-token-url">http://localhost:8000/oauth/token</span>
-                      <button type="button" class="copy-btn" data-copy="display-token-url">Copy</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="integration-group" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 24px; display: flex; gap: 12px;">
-                  <button type="button" id="download-config-btn" class="btn-cancel" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Download integration docs
-                  </button>
-                  <button type="button" id="share-dev-btn" class="btn-cancel" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                    Copy for Dev
-                  </button>
-                </div>
               </div>
             </div>
             
-            <div class="modal-actions">
+            <div class="modal-actions" style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px;">
               <button type="button" class="btn-cancel" id="cancel-modal-btn">Cancel</button>
-              <button type="submit" class="btn-save" id="save-modal-btn">Save App</button>
+              <button type="submit" class="btn-save" id="save-modal-btn" style="padding: 12px 24px;">Create client</button>
             </div>
           </form>
         </div>
+        <style>
+          .input-group label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+          .scope-chip { cursor: pointer; }
+          .scope-chip span { 
+            display: inline-block; padding: 6px 16px; border-radius: 8px; background: rgba(255,255,255,0.05); 
+            border: 1px solid var(--border); color: var(--text-muted); font-size: 13px; transition: all 0.2s;
+          }
+          .scope-chip input:checked + span { background: var(--primary); color: white; border-color: var(--primary); }
+        </style>
       </div>
       
       <!-- Delete Confirmation Modal -->

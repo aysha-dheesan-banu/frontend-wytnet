@@ -187,30 +187,32 @@
       border: 1px solid var(--border);
     }
 
-    /* Shared Portal Decorations */
-    .portal-decoration {
-      position: absolute;
-      z-index: -1;
-      pointer-events: none;
+    .stat-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: 16px;
+      transition: all 0.2s;
     }
 
-    .portal-sphere-1 {
-      top: -10%;
-      right: -5%;
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-      border-radius: 50%;
+    .stat-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-2px);
     }
 
-    .portal-sphere-2 {
-      bottom: -10%;
-      left: 20%;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
-      border-radius: 50%;
+    .badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: rgba(139, 92, 246, 0.2);
+      color: var(--primary);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      margin-left: 8px;
     }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 
@@ -224,14 +226,35 @@
       </div>
 
       <div class="nav-links">
+        <div class="label" style="margin: 20px 0 10px 16px; font-size: 11px;">Personal</div>
         <a href="/dashboard.html" class="nav-link active">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
             </path>
           </svg>
-          Account Dashboard
+          My Profile
         </a>
+
+        <div class="admin-only hidden">
+          <div class="label" style="margin: 24px 0 10px 16px; font-size: 11px;">Administration</div>
+          <a href="/users.html" class="nav-link">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+              </path>
+            </svg>
+            Manage Users
+          </a>
+          <a href="/clients.html" class="nav-link">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+              </path>
+            </svg>
+            Manage Apps
+          </a>
+        </div>
       </div>
 
       <div class="logout-section">
@@ -251,8 +274,15 @@
       <div class="portal-decoration portal-sphere-2"></div>
 
       <div class="main-header">
-        <h1>Welcome Back</h1>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+          <h1 style="margin:0;">Welcome Back</h1>
+          <span id="user-role-badge" class="badge hidden">ADMIN</span>
+        </div>
         <p>Here is an overview of your account.</p>
+      </div>
+
+      <div class="admin-only hidden" id="admin-overview-section" style="margin-bottom: 40px;">
+        <!-- Stats will be loaded here -->
       </div>
 
       <div id="loading-state" style="text-align: center; padding: 40px;">

@@ -16,22 +16,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalTitle = document.getElementById('modal-title');
     const idInput = document.getElementById('client-id');
     const appNameInput = document.getElementById('app-name-input');
-    const redirectUrisInput = document.getElementById('redirect-uris-input');
+    const descriptionInput = document.getElementById('description-input');
+    const pkceInput = document.getElementById('pkce-input');
+    const urisContainer = document.getElementById('redirect-uris-container');
+    const addUriBtn = document.getElementById('add-uri-btn');
     
     const credsSection = document.getElementById('credentials-section');
     const displayClientId = document.getElementById('display-client-id');
     const displayClientSecret = document.getElementById('display-client-secret');
-    const displayTestToken = document.getElementById('display-test-token');
-    const testTokenDisplay = document.getElementById('test-token-display');
-    const curlExample = document.getElementById('curl-example');
-    const generateTokenBtn = document.getElementById('generate-test-token-btn');
-    const downloadConfigBtn = document.getElementById('download-config-btn');
-    const shareDevBtn = document.getElementById('share-dev-btn');
     
     let currentClientIdToDelete = null;
 
     // --- State ---
     let clients = [];
+    let currentFilter = 'all';
+    let searchQuery = '';
 
     // --- Core Functions ---
     async function fetchClients() {
@@ -41,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (res.ok) {
                 clients = await res.json();
-                renderTable();
+                applyFiltersAndRender();
             } else if (res.status === 401) {
                 window.location.href = '/';
             } else {
@@ -52,31 +51,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderTable() {
-        if (clients.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">No apps found</td></tr>`;
+    function applyFiltersAndRender() {
+        let filtered = clients.filter(client => {
+            const matchesSearch = !searchQuery || 
+                client.app_name.toLowerCase().includes(searchQuery) || 
+                client.client_id.toLowerCase().includes(searchQuery);
+            
+            if (currentFilter === 'active') return matchesSearch && client.is_active;
+            if (currentFilter === 'disabled') return matchesSearch && !client.is_active;
+            return matchesSearch;
+        });
+
+        renderTable(filtered);
+    }
+
+    function renderTable(data) {
+        if (data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 100px;">No applications found matching your criteria</td></tr>`;
             return;
         }
 
-        tableBody.innerHTML = clients.map(client => {
-            let uris = [];
-            try { uris = JSON.parse(client.redirect_uris); } catch(e) { uris = [client.redirect_uris]; }
-            const urisHtml = uris.map(u => `<div style="font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px;">${escapeHTML(u)}</div>`).join('');
+        tableBody.innerHTML = data.map(client => {
+            const scopes = client.allowed_scopes || ['openid', 'profile', 'email'];
+            const scopesHtml = scopes.map(s => `<span class="scope-tag" style="margin-right: 4px;">${s}</span>`).join('');
+            const createdDate = client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A';
+            const pkceStatus = client.require_pkce ? 'Required' : 'Optional';
             
             return `
-            <tr>
-                <td><strong>${escapeHTML(client.app_name)}</strong></td>
-                <td><span style="font-family: monospace; font-size: 12px; color: var(--text-muted);">${escapeHTML(client.client_id)}</span></td>
-                <td>${urisHtml}</td>
-                <td style="text-align: right;">
-                    <button class="action-btn edit-btn" data-id="${client.id}" title="Edit App">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                    </button>
-                    <button class="action-btn delete delete-btn" data-id="${client.id}" data-name="${escapeHTML(client.app_name)}" title="Delete App">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
-                </td>
-            </tr>
+                <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 16px 24px;">
+                        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" class="edit-btn" data-id="${client.id}">
+                            <div class="app-icon">
+                                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: white;">${escapeHTML(client.app_name)}</div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Confidential: ${client.is_confidential ? 'Yes' : 'No'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 16px 24px;">
+                        <code style="font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 4px;">${client.client_id}</code>
+                    </td>
+                    <td style="padding: 16px 24px;">${scopesHtml}</td>
+                    <td style="padding: 16px 24px;">
+                        <div style="display: flex; align-items: center; gap: 6px; color: ${client.require_pkce ? '#10b981' : 'var(--text-muted)'};">
+                            <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            ${pkceStatus}
+                        </div>
+                    </td>
+                    <td style="padding: 16px 24px;">
+                        <span class="badge ${client.is_active ? 'active' : 'inactive'}" style="padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                            ${client.is_active ? 'Active' : 'Disabled'}
+                        </span>
+                    </td>
+                    <td style="padding: 16px 24px; text-align: right; color: var(--text-muted);">${createdDate}</td>
+                </tr>
             `;
         }).join('');
 
@@ -84,40 +114,85 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', () => openClientModal(btn.dataset.id));
         });
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => openDeleteModal(btn.dataset.id, btn.dataset.name));
+    }
+
+    // --- Search & Filter Listeners ---
+    const searchInput = document.getElementById('client-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            applyFiltersAndRender();
         });
     }
 
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            applyFiltersAndRender();
+        });
+    });
+
     // --- Modal Logic ---
+    function addUriInput(value = '') {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.gap = '10px';
+        div.style.marginBottom = '10px';
+        div.innerHTML = `
+            <input type="text" class="redirect-uri-field" value="${escapeHTML(value)}" placeholder="https://app.example.com/callback" style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px;">
+            <button type="button" class="remove-uri-btn" style="background: transparent; border: none; color: #f87171; cursor: pointer; padding: 0 10px;">✕</button>
+        `;
+        urisContainer.appendChild(div);
+        
+        div.querySelector('.remove-uri-btn').addEventListener('click', () => div.remove());
+    }
+
+    addUriBtn.addEventListener('click', () => addUriInput());
+
     function openClientModal(clientId = null) {
         clientForm.reset();
         idInput.value = '';
         credsSection.style.display = 'none';
+        urisContainer.innerHTML = '';
+        
+        // Default scopes
+        document.querySelectorAll('input[name="scopes"]').forEach(cb => {
+            cb.checked = ['openid', 'profile', 'email'].includes(cb.value);
+        });
         
         if (clientId) {
             const client = clients.find(c => c.id === clientId);
             if (!client) return;
-            modalTitle.textContent = 'Edit App';
+            modalTitle.textContent = 'Edit OAuth Client';
+            document.getElementById('save-modal-btn').textContent = 'Update client';
             
             idInput.value = client.id;
             appNameInput.value = client.app_name;
+            descriptionInput.value = client.description || '';
+            pkceInput.checked = client.require_pkce;
             
+            // Scopes
+            const clientScopes = client.allowed_scopes || [];
+            document.querySelectorAll('input[name="scopes"]').forEach(cb => {
+                cb.checked = clientScopes.includes(cb.value);
+            });
+            
+            // Redirect URIs
             let uris = [];
-            try { uris = JSON.parse(client.redirect_uris); } catch(e) { uris = [client.redirect_uris]; }
-            redirectUrisInput.value = uris.join(', ');
+            try { uris = JSON.parse(client.redirect_uris); } catch(e) { uris = Array.isArray(client.redirect_uris) ? client.redirect_uris : [client.redirect_uris]; }
+            if (uris.length === 0) addUriInput();
+            else uris.forEach(u => addUriInput(u));
             
             displayClientId.textContent = client.client_id;
             displayClientSecret.textContent = client.client_secret;
-            
-            // Generate initial test token and curl
-            updateIntegrationDocs(client.client_id, client.client_secret, client.app_name);
-            
             credsSection.style.display = 'block';
-            testTokenDisplay.style.display = 'none';
             
         } else {
-            modalTitle.textContent = 'Register App';
+            modalTitle.textContent = 'Create OAuth Client';
+            document.getElementById('save-modal-btn').textContent = 'Create client';
+            addUriInput(); // Start with one empty URI field
         }
         
         clientModal.classList.add('active');
@@ -226,17 +301,25 @@ Integration Guide: ${API_BASE}/docs/integration
         const url = isEdit ? `${API_BASE}/api/clients/${idInput.value}` : `${API_BASE}/api/clients`;
         const method = isEdit ? 'PUT' : 'POST';
         
-        const uris = redirectUrisInput.value.split(',').map(s => s.trim()).filter(s => s);
+        const uris = Array.from(document.querySelectorAll('.redirect-uri-field'))
+            .map(input => input.value.trim())
+            .filter(v => v);
+            
+        const scopes = Array.from(document.querySelectorAll('input[name="scopes"]:checked'))
+            .map(cb => cb.value);
         
         const payload = {
             app_name: appNameInput.value,
-            redirect_uris: uris
+            description: descriptionInput.value,
+            require_pkce: pkceInput.checked,
+            redirect_uris: uris,
+            allowed_scopes: scopes
         };
 
         try {
             const saveBtn = document.getElementById('save-modal-btn');
             const originalText = saveBtn.textContent;
-            saveBtn.textContent = 'Saving...';
+            saveBtn.textContent = 'Processing...';
             saveBtn.disabled = true;
 
             const res = await fetch(url, {
@@ -250,26 +333,21 @@ Integration Guide: ${API_BASE}/docs/integration
 
             if (res.ok) {
                 const newClient = await res.json();
-                showToast(`App successfully ${isEdit ? 'updated' : 'registered'}`, 'success');
+                showToast(`Client successfully ${isEdit ? 'updated' : 'created'}`, 'success');
                 
                 if (!isEdit) {
-                    // If it was a new registration, don't close, show credentials
-                    modalTitle.textContent = 'App Registered Successfully!';
+                    // Show credentials for new client
+                    modalTitle.textContent = 'Client Created Successfully!';
                     idInput.value = newClient.id;
                     displayClientId.textContent = newClient.client_id;
                     displayClientSecret.textContent = newClient.client_secret;
-                    
-                    updateIntegrationDocs(newClient.client_id, newClient.client_secret, newClient.app_name);
                     credsSection.style.display = 'block';
-                    if (testTokenDisplay) testTokenDisplay.style.display = 'none';
                     
-                    // Update the button text to "I've saved it"
-                    const saveBtn = document.getElementById('save-modal-btn');
-                    saveBtn.textContent = "I've saved it";
+                    saveBtn.textContent = "Done";
                     saveBtn.onclick = () => {
                         closeClientModal();
                         saveBtn.onclick = null;
-                        saveBtn.textContent = 'Save App';
+                        saveBtn.textContent = 'Create client';
                     };
                 } else {
                     closeClientModal();
@@ -288,6 +366,7 @@ Integration Guide: ${API_BASE}/docs/integration
             showToast('Connection error', 'error');
             const saveBtn = document.getElementById('save-modal-btn');
             saveBtn.disabled = false;
+            saveBtn.textContent = isEdit ? 'Update client' : 'Create client';
         }
     });
 

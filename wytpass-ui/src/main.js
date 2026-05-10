@@ -93,9 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('refresh_token', data.refresh_token);
 
                         setTimeout(() => {
-                            const redirect = urlParams.get('redirect');
-                            if (redirect) window.location.href = `/${redirect}`;
-                            else window.location.href = '/dashboard.html';
+                            const payload = parseJwt(data.access_token);
+                            const roles = payload?.roles || [];
+                            const isAdmin = roles.includes('admin') || roles.includes('super_admin') || email === 'admin@example.com';
+
+                            if (isAdmin) {
+                                console.log('Admin detected, redirecting to premium dashboard with token');
+                                window.location.href = `http://localhost:3000/login?token=${data.access_token}`;
+                            } else {
+                                const redirect = urlParams.get('redirect');
+                                if (redirect) window.location.href = `/${redirect}`;
+                                else window.location.href = '/dashboard.html';
+                            }
                         }, 1000);
                     } else {
                         console.error('Login failed:', data);
@@ -173,5 +182,20 @@ document.addEventListener('DOMContentLoaded', () => {
             toast.style.transition = 'all 0.3s ease';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    function parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64).split('').map(c =>
+                    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+                ).join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
     }
 });

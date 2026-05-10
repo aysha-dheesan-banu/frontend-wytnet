@@ -127,6 +127,28 @@
       .btn-cancel:hover { background: rgba(255,255,255,0.1); }
       .btn-save { background: var(--primary); border: none; color: white; }
       .btn-save:hover { filter: brightness(1.1); }
+
+      /* Filter Buttons */
+      .filter-btn {
+        background: transparent; border: none; color: var(--text-muted);
+        padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+        transition: all 0.2s;
+      }
+      .filter-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+      .filter-btn.active { background: var(--primary); color: white; }
+
+      /* User Avatar Shimmer */
+      .user-avatar {
+        width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(45deg, var(--primary), #38bdf8);
+        display: flex; align-items: center; justify-content: center; font-weight: 600; color: white; font-size: 12px;
+        flex-shrink: 0;
+      }
+      
+      .role-badge {
+        padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;
+        background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2);
+      }
+      .role-badge.super { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
     </style>
   </head>
   <body>
@@ -166,39 +188,70 @@
         <div class="portal-decoration portal-sphere-1"></div>
         <div class="portal-decoration portal-sphere-2"></div>
         
-        <div class="main-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <div>
-            <h1>Manage Users</h1>
-            <p>View, add, and manage user accounts.</p>
+            <h1 style="font-size: 24px; font-weight: 700; color: white; margin: 0;">Users</h1>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Search, audit, and manage all user accounts on the platform.</p>
           </div>
-          <button id="add-user-btn" class="btn" style="padding: 10px 20px; font-size: 14px; width: auto; background: var(--primary); border: none; color: white; border-radius: 8px; cursor: pointer;">
-            + Add User
-          </button>
+          <div id="super-admin-tag" class="role-badge super hidden">Super Admin</div>
         </div>
 
-        <div class="content-card">
-          <div class="table-container">
-            <table>
+        <!-- Search & Filters Container -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-top: 24px; margin-bottom: 24px;">
+          <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
+            <div style="flex: 1; min-width: 300px; position: relative;">
+              <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <input type="text" id="user-search" placeholder="Search by email or name..." style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 12px 42px; color: white; outline: none; font-size: 14px; transition: border-color 0.2s;">
+            </div>
+            <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 10px; border: 1px solid var(--border);">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="active">Active</button>
+              <button class="filter-btn" data-filter="suspended">Suspended</button>
+              <button class="filter-btn" data-filter="unverified">Unverified</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-card" style="padding: 0; overflow: hidden; border-radius: 16px;">
+          <div class="table-container" style="border: none; border-radius: 0;">
+            <table style="font-size: 13px;">
               <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Full Name</th>
-                  <th>Status</th>
-                  <th>Apps</th>
-                  <th style="text-align: right;">Actions</th>
+                <tr style="background: rgba(255,255,255,0.02);">
+                  <th style="padding: 16px 24px; width: 220px;">User</th>
+                  <th style="padding: 16px 24px;">Email</th>
+                  <th style="padding: 16px 24px;">Status</th>
+                  <th style="padding: 16px 24px;">Roles</th>
+                  <th style="padding: 16px 24px;">Providers</th>
+                  <th style="padding: 16px 24px; text-align: center;">Sessions</th>
+                  <th style="padding: 16px 24px; text-align: center;">Apps</th>
+                  <th style="padding: 16px 24px; text-align: right;">Created</th>
                 </tr>
               </thead>
               <tbody id="users-table-body">
                 <tr>
-                  <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                    <div class="spinner" style="margin: 0 auto 16px auto; width: 30px; height: 30px;"></div>
-                    Loading users...
+                  <td colspan="8" style="text-align: center; padding: 100px; color: var(--text-muted);">
+                    <div class="spinner" style="margin: 0 auto 16px auto; width: 32px; height: 32px;"></div>
+                    Loading platform users...
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
+          
+          <!-- Footer / Pagination -->
+          <div style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.01);">
+            <div id="user-count-label" style="color: var(--text-muted); font-size: 12px;">Showing 0 users</div>
+            <div style="display: flex; gap: 10px;">
+              <button class="action-btn" style="padding: 8px 16px; font-size: 12px; border: 1px solid var(--border); border-radius: 8px;">Previous</button>
+              <button class="action-btn" style="padding: 8px 16px; font-size: 12px; border: 1px solid var(--border); border-radius: 8px;">Next</button>
+            </div>
+          </div>
         </div>
+
+        <button id="add-user-btn" style="position: fixed; bottom: 32px; right: 32px; background: var(--primary); color: white; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4); display: flex; align-items: center; gap: 10px; z-index: 100; transition: transform 0.2s;">
+          <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          New User
+        </button>
       </main>
 
       <!-- User Modal -->
