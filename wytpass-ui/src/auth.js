@@ -1,4 +1,5 @@
-const PROJECT1_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const isProd = window.location.hostname === 'wytnet.com';
+const PROJECT1_URL = isProd ? 'https://api.wytnet.com' : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
 
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);

@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const isProd = window.location.hostname === 'wytnet.com';
+const API_BASE = isProd ? 'https://api.wytnet.com' : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
+const PREMIUM_DASHBOARD = isProd ? 'https://sso.wytnet.com' : 'http://localhost:3000';
 
 document.addEventListener('DOMContentLoaded', () => {
     const authForm = document.getElementById('auth-form');
@@ -99,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             if (isAdmin) {
                                 console.log('Admin detected, redirecting to premium dashboard with token');
-                                window.location.href = `http://localhost:3000/login?token=${data.access_token}`;
+                                window.location.href = `${PREMIUM_DASHBOARD}/login?token=${data.access_token}`;
                             } else {
                                 const redirect = urlParams.get('redirect');
                                 if (redirect) window.location.href = `/${redirect}`;
