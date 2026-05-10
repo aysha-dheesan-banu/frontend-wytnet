@@ -1,6 +1,6 @@
 const isProd = window.location.hostname === 'wytnet.com';
 const API_BASE = isProd ? 'https://api.wytnet.com' : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
-const PREMIUM_DASHBOARD = isProd ? 'https://sso.wytnet.com' : 'http://localhost:3000';
+const PREMIUM_DASHBOARD = 'http://localhost:3000'; // Temporary revert for dev
 
 document.addEventListener('DOMContentLoaded', () => {
     const authForm = document.getElementById('auth-form');
